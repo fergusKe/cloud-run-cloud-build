@@ -1,0 +1,51 @@
+steps:
+  # Install dependencies
+  - name: python
+    entrypoint: pip
+    args: ["install", "-r", "requirements.txt", "--user"]
+
+  # Run unit tests
+  - name: python
+    entrypoint: python
+    args: ["-m", "pytest"]
+
+  # Docker Build
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/exercise-291215/python-apps/cloud-run-cloud-build",
+        ".",
+      ]
+
+  # Docker push to Google Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/exercise-291215/python-apps/cloud-run-cloud-build",
+      ]
+
+  # Deploy to Cloud Run
+  - name: google/cloud-sdk
+    args:
+      [
+        "gcloud",
+        "run",
+        "deploy",
+        "cloud-run-cloud-build",
+        "--image=us-central1-docker.pkg.dev/exercise-291215/python-apps/cloud-run-cloud-build:latest",
+        "--allow-unauthenticated",
+        "--region",
+        "us-central1",
+        "--platform",
+        "managed",
+      ]
+
+# Store images in Google Artifact Registry
+images:
+  - us-central1-docker.pkg.dev/exercise-291215/python-apps/cloud-run-cloud-build:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
